@@ -29,16 +29,34 @@ function App() {
     getAllTopics();
   }, []);
 
-  const handleFormSubmit = (formData) => {
-    console.log(formData, 'form data in app')
+  const handleFormSubmit = async (formData) => {
+    const res = await topicService.createTopic(formData);
+    setTopics((currTopics) => [...currTopics, res.res.data]);
   }
 
-  const handleDelete = () => {
-
+  const handleDelete = async (topicId) => {
+    await topicService.deleteTopic(topicId);
+    setTopics((currTopics) => currTopics.filter((topic) => topic.id !== topicId));
   }
 
-  const handleVoting = () => {
-    
+  const handleVotingUpdate = (topicId, updatedTopic) => {
+    setTopics((currTopics) => {
+      return currTopics.map(topic => {
+        if (topic.id === topicId) return updatedTopic
+        return topic;
+      })
+    })
+  }
+
+  const handleVoting = async (topicId, direction) => {
+    if (direction === 'up') {
+      const upvotedTopic = await topicService.upvoteTopic(topicId);
+      handleVotingUpdate(topicId, upvotedTopic.res.data);
+
+    } else if (direction === 'down') {
+      const downvotedTopic = await topicService.downvoteTopic(topicId);
+      handleVotingUpdate(topicId, downvotedTopic.res.data);
+    }
   }
 
   return (
@@ -50,7 +68,7 @@ function App() {
         buttonText='Add Topic' 
       />
       <TopicContext.Provider value={{ handleDelete, handleVoting}}>
-        <TopicList topics={topics} />
+        <TopicList topics={topics.sort((a,b) => b.score - a.score)} />
       </TopicContext.Provider>
     </>
   )
